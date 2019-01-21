@@ -1,0 +1,6 @@
+LIBRARY
+EXPORTS
+  InitSession @ 1
+  PredictFile @ 2
+  PredictBase64 @ 3
+  FreeSession @ 4
