@@ -61,7 +61,7 @@ static YAML::Node _charset = config["Model"]["CharSet"];
 int InitSession()
 {
 
-	Numeric = new string[11] { "", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
+	Numeric = new string[11]{ "", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
 	Alphanumeric = new string[63]{
 		"", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
 		"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z",
@@ -151,10 +151,11 @@ Status ReadTensorFromImageBytesString(string buffer, const int input_height, con
 	const int wanted_channels = 1;
 	tensorflow::Output image_reader = DecodePng(root.WithOpName("png_reader"), file_reader, DecodePng::Channels(wanted_channels));
 
-	Output float_caster = Cast(root.WithOpName("float_caster"), image_reader, tensorflow::DT_FLOAT);
-
-	auto resized1 = Reshape(root, float_caster, Const(root, { input_height, input_width }));
-	auto transpose = Transpose(root, resized1, Const(root, { 1, 0 }));
+	auto _dims_expander = ExpandDims(root.WithOpName("expand"), image_reader, 0);
+	auto _resize = ResizeArea(root, _dims_expander, Const(root, { input_height, input_width }));
+	Output float_caster = Cast(root.WithOpName("float_caster"), _resize, tensorflow::DT_FLOAT);
+	auto _reshape = Reshape(root, float_caster, Const(root, { input_height, input_width }));
+	auto transpose = Transpose(root, _reshape, Const(root, { 1, 0 }));
 	auto resized = Reshape(root, transpose, Const(root, { input_width, input_height, 1 }));
 	auto dims_expander = ExpandDims(root.WithOpName("expand"), resized, 0);
 
@@ -224,11 +225,11 @@ static Status ReadTensorFromImageFile(const string& file_name, const int input_h
 		image_reader = DecodeJpeg(root.WithOpName("jpeg_reader"), file_reader,
 			DecodeJpeg::Channels(wanted_channels));
 	}
-
-	Output float_caster = Cast(root.WithOpName("float_caster"), image_reader, tensorflow::DT_FLOAT);
-
-	auto resized1 = Reshape(root, float_caster, Const(root, { input_height, input_width }));
-	auto transpose = Transpose(root, resized1, Const(root, { 1, 0 }));
+	auto _dims_expander = ExpandDims(root.WithOpName("expand"), image_reader, 0);
+	auto _resize = ResizeArea(root, _dims_expander, Const(root, { input_height, input_width }));
+	Output float_caster = Cast(root.WithOpName("float_caster"), _resize, tensorflow::DT_FLOAT);
+	auto _reshape = Reshape(root, float_caster, Const(root, { input_height, input_width }));
+	auto transpose = Transpose(root, _reshape, Const(root, { 1, 0 }));
 	auto resized = Reshape(root, transpose, Const(root, { input_width, input_height, 1 }));
 	auto dims_expander = ExpandDims(root.WithOpName("expand"), resized, 0);
 
@@ -286,7 +287,7 @@ char * PredictFile(const char *image_path) {
 	return p;
 }
 
-char *PredictBase64(const char * img_base64) {
+char *PredictBase64(const char *img_base64) {
 
 	int input_height = resize[1];
 	int input_width = resize[0];
@@ -295,7 +296,7 @@ char *PredictBase64(const char * img_base64) {
 	std::vector<Tensor> resized_tensors;
 
 	string image_bytes = base64_decode(img_base64);
-	
+
 	Status read_tensor_status = ReadTensorFromImageBytesString(image_bytes, input_height, input_width, input_mean, input_std, &resized_tensors);
 	if (!read_tensor_status.ok()) {
 		LOG(ERROR) << read_tensor_status;
