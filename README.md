@@ -79,4 +79,22 @@ int main()
 ```
 
 
+## Python 调用示例
+```
+import base64
+from ctypes import *
+dll = cdll.LoadLibrary('CaptchaLibrary.dll')
+dll.InitSession()
 
+with open("test.png", "rb") as f:
+    b = f.read()
+
+b64 = base64.b64encode(b)
+dll.PredictFile.restype = c_char_p
+dll.PredictBase64.restype = c_char_p
+result_file = dll.PredictFile(b"test.png")
+result_base64 = dll.PredictBase64(b64)
+print("PredictFile:", string_at(result_file).decode())
+print("PredictBase64:", string_at(result_base64).decode())
+dll.FreeSession()
+```
