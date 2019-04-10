@@ -33,6 +33,7 @@
 #include "tensorflow/core/util/command_line_flags.h"
 #include "yaml-cpp/yaml.h"
 #include "base64.h"
+#include <typeinfo>
 
 
 using namespace std;
@@ -55,13 +56,15 @@ static const string *charset_map = new string;
 static Session* session;
 static YAML::Node config = YAML::LoadFile("./model.yaml");
 static const std::vector<int> resize = config["Pretreatment"]["Resize"].as<std::vector<int>>();
+static const std::vector<string> exclude = config["Model"]["CharExclude"].as<std::vector<string>>();
 static const std::string model_name = config["Model"]["ModelName"].as<std::string>();
 static YAML::Node _charset = config["Model"]["CharSet"];
+static int charset_size = 0;
 
 int InitSession()
 {
 
-	Numeric = new string[11]{ "", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
+	Numeric = new string[11] { "", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
 	Alphanumeric = new string[63]{
 		"", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
 		"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z",
@@ -79,34 +82,59 @@ int InitSession()
 		return -1;
 	}
 
-
 	if (_charset.size() == 0) {
-		const std::string charset = config["Model"]["CharSet"].as<std::string>();
-		if (charset.compare("Numeric") == 0) {
+		const std::string charset = _charset.as<std::string>();
+		if (charset.compare("NUMERIC") == 0) {
 			charset_map = Numeric;
+			charset_size = 11;
 		}
-		else if (charset.compare("Alphanumeric")) {
+		else if (charset.compare("ALPHANUMERIC") == 0) {
 			charset_map = Alphanumeric;
+			charset_size = 63;
 		}
-		else if (charset.compare("AlphabetLower")) {
+		else if (charset.compare("ALPHABET_LOWER") == 0) {
 			charset_map = AlphabetLower;
+			charset_size = 27;
 		}
-		else if (charset.compare("AlphabetUpper")) {
+		else if (charset.compare("ALPHABET_UPPER") == 0) {
 			charset_map = AlphabetUpper;
+			charset_size = 27;
 		}
-		else if (charset.compare("AlphanumericUpper")) {
+		else if (charset.compare("ALPHANUMERIC_UPPER") == 0) {
 			charset_map = AlphanumericUpper;
+			charset_size = 37;
 		}
-		else if (charset.compare("AlphanumericLower")) {
+		else if (charset.compare("ALPHANUMERIC_LOWER") == 0) {
 			charset_map = AlphanumericLower;
+			charset_size = 37;
 		}
 		else {
 			charset_map = AlphanumericLower;
+			charset_size = 37;
 		}
+	}
+	else if (_charset.size() > 1) {
+		std::vector<string> charset = _charset.as<std::vector<string>>();
+		int size = charset.size() + 1;
+		string* x = new string[size];
+
+		vector<string>::const_iterator i = charset.begin();
+		int n = 1;
+		x[0] = "";
+		while (i != charset.end())
+		{
+			x[n] = (*i);
+			n++;
+			i++;
+		}
+
+		charset_map = x;
+		charset_size = size;
 	}
 	else {
 		charset_map = AlphanumericLower;
 	}
+
 
 	string model_path = "./" + model_name + ".pb";
 	GraphDef graphdef;
@@ -246,7 +274,29 @@ static Status ReadTensorFromImageFile(const string& file_name, const int input_h
 	return Status::OK();
 }
 
-char * PredictFile(const char *image_path) {
+char * Decode(vector<tensorflow::Tensor> outputs) {
+	Tensor t = outputs[0];
+	string result = "";
+	auto tmap = t.tensor<int64, 2>();
+	int output_dim = t.shape().dim_size(1);
+	for (int j = 0; j < output_dim; j++)
+	{
+		int index = tmap(0, j);
+		if (index >= charset_size) {
+			std::cout << "ERROR: CHARSET error, index[" << index << "] > charset size[" << charset_size << "]..." << std::endl;
+			return NULL;
+		}
+		result += charset_map[tmap(0, j)];
+	}
+	int len = result.length();
+	char *p = new char[len + 1];
+	p[len] = 0;
+	strcpy(p, result.c_str());
+	return p;
+}
+
+
+char * PredictFile(char *image_path) {
 
 	int input_height = resize[1];
 	int input_width = resize[0];
@@ -273,21 +323,10 @@ char * PredictFile(const char *image_path) {
 		return NULL;
 	}
 
-	Tensor t = outputs[0];
-	string result = "";
-	auto tmap = t.tensor<int64, 2>();
-	int output_dim = t.shape().dim_size(1);
-	for (int j = 0; j < output_dim; j++)
-	{
-		result += charset_map[tmap(0, j)];
-	}
-	std::cout << result << std::endl;
-	char *p = new char[result.length() + 1];
-	strcpy(p, result.c_str());
-	return p;
+	return Decode(outputs);
 }
 
-char *PredictBase64(const char *img_base64) {
+char *PredictBase64(char *img_base64) {
 
 	int input_height = resize[1];
 	int input_width = resize[0];
@@ -296,7 +335,7 @@ char *PredictBase64(const char *img_base64) {
 	std::vector<Tensor> resized_tensors;
 
 	string image_bytes = base64_decode(img_base64);
-
+	
 	Status read_tensor_status = ReadTensorFromImageBytesString(image_bytes, input_height, input_width, input_mean, input_std, &resized_tensors);
 	if (!read_tensor_status.ok()) {
 		LOG(ERROR) << read_tensor_status;
@@ -316,20 +355,58 @@ char *PredictBase64(const char *img_base64) {
 		return NULL;
 	}
 
-	Tensor t = outputs[0];
-	string result = "";
-	auto tmap = t.tensor<int64, 2>();
-	int output_dim = t.shape().dim_size(1);
-	for (int j = 0; j < output_dim; j++)
-	{
-		result += charset_map[tmap(0, j)];
-	}
-	std::cout << result << std::endl;
-
-	char *p = new char[result.length() + 1];
-	strcpy(p, result.c_str());
-	return p;
+	return Decode(outputs);
 }
+
+char *PredictBinData(const unsigned char *img_data, const unsigned int& data_size)
+{
+	int input_height = resize[1];
+	int input_width = resize[0];
+	int input_mean = 0;
+	int input_std = 1;
+	std::vector<Tensor> resized_tensors;
+
+	string image_bytes;
+	for (unsigned int i = 0; i < data_size; i++)
+		image_bytes.push_back(img_data[i]);
+
+	Status read_tensor_status = ReadTensorFromImageBytesString(image_bytes, input_height, input_width, input_mean, input_std, &resized_tensors);
+	if (!read_tensor_status.ok())
+	{
+		LOG(ERROR) << read_tensor_status;
+		cout << "resing error" << endl;
+		return NULL;
+	}
+
+	const Tensor& resized_tensor = resized_tensors[0];
+
+	vector<tensorflow::Tensor> outputs;
+	string output_node = "dense_decoded";
+	Status status_run = session->Run({ { "input", resized_tensor } }, { output_node }, {}, &outputs);
+
+	if (!status_run.ok()) {
+		std::cout << "ERROR: RUN failed..." << std::endl;
+		std::cout << status_run.ToString() << "\n";
+		return NULL;
+	}
+
+	return Decode(outputs);
+}
+
+int  FreePredictData(char *& pPredictData)
+{
+	if (pPredictData != NULL)
+	{
+		delete[]pPredictData;
+		pPredictData = NULL;
+		return 0;
+	}
+	else
+	{
+		return -1;
+	}
+}
+
 
 void FreeSession() {
 	session->Close();

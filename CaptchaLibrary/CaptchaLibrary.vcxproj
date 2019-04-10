@@ -38,6 +38,7 @@
     <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
+    <UseOfMfc>false</UseOfMfc>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
@@ -123,6 +124,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;CAPTCHALIBRARY_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>../../yaml-cpp-32/include;../../tensorflow-32r1.8;../../tensorflow-32r1.8/tensorflow/contrib/cmake/build/Debug;../../tensorflow-32r1.8/tensorflow/contrib/cmake/build/external/nsync/public;../../tensorflow-32r1.8/tensorflow/contrib/cmake/build/protobuf/src/protobuf/src;../../tensorflow-32r1.8/tensorflow/contrib/cmake/build/external/eigen_archive;../../tensorflow-32r1.8/tensorflow/contrib/cmake/build;../../tensorflow-32r1.8/;../../tensorflow-32r1.8/third_party/eigen3;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -130,6 +132,8 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ModuleDefinitionFile>CaptchaLibrary.def</ModuleDefinitionFile>
+      <AdditionalLibraryDirectories>../../yaml-cpp-32/build/Release;../../tensorflow-32r1.8/tensorflow/contrib/cmake/build/Release;</AdditionalLibraryDirectories>
+      <AdditionalDependencies>tensorflow.lib;libyaml-cppmd.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -142,14 +146,14 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;CAPTCHALIBRARY_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>D:\Workplace\CProjects\yaml-cpp\include;D:\Workplace\CProjects\tensorflow\tensorflow\contrib\cmake\build\Debug;D:\Workplace\CProjects\tensorflow\tensorflow\contrib\cmake\build\external\nsync\public;D:\Workplace\CProjects\tensorflow\tensorflow\contrib\cmake\build\protobuf\src\protobuf\src;D:\Workplace\CProjects\tensorflow\tensorflow\contrib\cmake\build\external\eigen_archive;D:\Workplace\CProjects\tensorflow\tensorflow\contrib\cmake\build;D:\Workplace\CProjects\tensorflow\;D:\Workplace\CProjects\tensorflow\third_party\eigen3;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../yaml-cpp/include;../../tensorflow/tensorflow/contrib/cmake/build/Debug;../../tensorflow/tensorflow/contrib/cmake/build/external/nsync/public;../../tensorflow/tensorflow/contrib/cmake/build/protobuf/src/protobuf/src;../../tensorflow/tensorflow/contrib/cmake/build/external/eigen_archive;../../tensorflow/tensorflow/contrib/cmake/build;../../tensorflow\;../../tensorflow/third_party/eigen3;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>D:\Workplace\CProjects\yaml-cpp\build\Release;D:\Workplace\CProjects\tensorflow\tensorflow\contrib\cmake\build\Release;</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../../yaml-cpp/build/Release;../../tensorflow/tensorflow/contrib/cmake/build/Release;</AdditionalLibraryDirectories>
       <AdditionalDependencies>tensorflow.lib;libyaml-cppmd.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ModuleDefinitionFile>CaptchaLibrary.def</ModuleDefinitionFile>
       <ImportLibrary>

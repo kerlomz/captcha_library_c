@@ -4,3 +4,5 @@ EXPORTS
   PredictFile @ 2
   PredictBase64 @ 3
   FreeSession @ 4
+  PredictBinData @5
+  FreePredictData @6
